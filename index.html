@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="오늘뭐먹지">
+<meta name="theme-color" content="#fbf7f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1a1714" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>오늘뭐먹지</title>
+<style>
+:root{
+  --bg:#fbf7f2;--card:#fff;--text:#2a2420;--muted:#8a7f76;--border:#ece4da;
+  --accent:#d9480f;--accent-soft:#fde8dc;--ok:#2f9e44;--ok-soft:#e3f5e6;
+  --warn:#d97706;--warn-soft:#fff1db;--danger:#c92a2a;--danger-soft:#fde2e2;
+  --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#1a1714;--card:#25211d;--text:#f1ebe4;--muted:#a39a90;--border:#3a342e;
+  --accent:#ff7a45;--accent-soft:#3d2418;--ok:#51cf66;--ok-soft:#1c3322;
+  --warn:#ffa94d;--warn-soft:#3a2a14;--danger:#ff6b6b;--danger-soft:#3d1c1c;}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  -webkit-text-size-adjust:100%;}
+body.locked{overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+.top{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;align-items:center;
+  justify-content:space-between;padding:calc(var(--safe-t) + 12px) 16px 10px}
+.top h1{margin:0;font-size:28px;letter-spacing:-.5px}
+#addBtn{width:40px;height:40px;border-radius:50%;background:var(--accent);color:#fff;
+  font-size:26px;line-height:40px;text-align:center}
+main{padding:0 16px calc(96px + var(--safe-b))}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;display:grid;grid-template-columns:repeat(4,1fr);
+  background:var(--card);border-top:1px solid var(--border);padding:6px 0 calc(6px + var(--safe-b))}
+.tabs button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--muted);padding:4px 0}
+.tabs button.on{color:var(--accent);font-weight:600}
+.tabs svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+input,select,textarea{font:inherit;font-size:16px;width:100%;padding:11px 12px;border-radius:10px;
+  border:1px solid var(--border);background:var(--card);color:var(--text);outline:none;-webkit-appearance:none;appearance:none}
+input:focus,textarea:focus{border-color:var(--accent)}
+input[type=date]{min-height:44px}
+textarea{resize:vertical;line-height:1.5}
+label{display:block;font-size:13px;color:var(--muted);margin:14px 0 6px;font-weight:600}
+label > input,label > textarea{margin-top:6px;color:var(--text);font-weight:400}
+.search{margin:4px 0 10px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips.wrap{flex-wrap:wrap;overflow:visible}
+.chip{flex:none;padding:7px 13px;border-radius:999px;background:var(--card);border:1px solid var(--border);font-size:14px;white-space:nowrap}
+.chip span{color:var(--muted);font-size:12px;margin-left:2px}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip.on span{color:#fff;opacity:.8}
+.list{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);
+  border:1px solid var(--border);border-radius:14px;padding:12px 14px}
+.row-main{flex:1;min-width:0}
+.row-title{font-size:16px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row-sub{font-size:13px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.thumb{width:56px;height:56px;border-radius:10px;object-fit:cover;flex:none}
+.thumb.ph{display:flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:22px}
+.badge{flex:none;font-size:12px;font-weight:600;padding:4px 8px;border-radius:8px;background:var(--bg);color:var(--muted);white-space:nowrap}
+.badge.ok{background:var(--ok-soft);color:var(--ok)}
+.badge.warn{background:var(--warn-soft);color:var(--warn)}
+.badge.danger{background:var(--danger-soft);color:var(--danger)}
+.alert{background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:10px 14px;font-size:14px;margin:4px 0 12px}
+.hl{color:var(--warn);font-weight:600}
+.miss{color:var(--danger)}
+.sec{font-size:17px;margin:20px 0 10px}
+.sec span{color:var(--muted);font-weight:500;font-size:14px}
+.muted{color:var(--muted)} .small{font-size:12px;font-weight:400} .center{text-align:center}
+.empty{text-align:center;padding:56px 24px;color:var(--muted)}
+.empty-ic{font-size:40px;margin-bottom:10px}
+.empty b{display:block;color:var(--text);font-size:17px;margin-bottom:6px}
+.empty p{margin:0;font-size:14px;line-height:1.5}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:4px 16px 16px;margin-bottom:14px}
+.card h3{font-size:16px;margin:14px 0 4px}
+.card p{margin:0 0 8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 16px;border-radius:12px;
+  background:var(--bg);border:1px solid var(--border);font-weight:600;font-size:15px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.danger{color:var(--danger)}
+.btn.ghost{background:transparent}
+.btn.full{width:100%;margin-top:10px}
+.danger-text{color:var(--danger)}
+.actions{display:flex;gap:10px;margin-top:20px}
+.actions .btn{flex:1}
+.link{color:var(--accent);font-size:14px;font-weight:600}
+.seg{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:3px}
+.seg button{flex:1;padding:9px 0;border-radius:8px;font-size:15px}
+.seg button.on{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}
+.quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.quick .chip{padding:6px 11px;font-size:13px}
+.note{background:var(--accent-soft);color:var(--accent);border-radius:10px;padding:10px 12px;font-size:14px;margin:6px 0}
+/* sheet */
+.sheet-wrap{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,0);transition:background .2s}
+.sheet-wrap.show{background:rgba(0,0,0,.4)}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:92vh;max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  background:var(--card);border-radius:20px 20px 0 0;padding:18px 18px calc(24px + var(--safe-b));
+  transform:translateY(100%);transition:transform .22s ease-out;overscroll-behavior:contain}
+.sheet.tall{min-height:70vh}
+.sheet-wrap.show .sheet{transform:none}
+.sheet h2{margin:2px 40px 8px 0;font-size:21px}
+.sheet h3{font-size:16px;margin:20px 0 8px}
+.sheet-close{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;background:var(--bg);font-size:22px;line-height:34px;color:var(--muted);z-index:2}
+.sheet-head{display:flex;align-items:baseline;justify-content:space-between;margin-right:44px}
+.sheet-head h2{margin-right:0}
+.hero{width:calc(100% + 36px);margin:-18px -18px 14px;height:220px;object-fit:cover;border-radius:20px 20px 0 0;display:block}
+.meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tag{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:600}
+.src{display:inline-block;margin-top:10px;color:var(--accent);font-size:14px;font-weight:600;text-decoration:none}
+.ings{list-style:none;margin:0;padding:0}
+.ing{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:15px}
+.ing .dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--muted)}
+.ing.have .dot{background:var(--ok)} .ing.miss .dot{background:var(--danger)} .ing.staple .dot{background:var(--border)}
+.ing .iname{font-weight:600} .ing .iamt{color:var(--muted)}
+.ing .inote{margin-left:auto;font-size:12px;color:var(--muted);white-space:nowrap}
+.ing.miss .inote{color:var(--danger)} .ing.have .inote{color:var(--ok)}
+.steps{margin:0;padding-left:22px;line-height:1.6} .steps li{margin-bottom:8px}
+.memo{white-space:pre-wrap;line-height:1.5;margin:0}
+.ingrow{display:grid;grid-template-columns:1fr 92px auto auto;gap:6px;margin-bottom:6px;align-items:center}
+.ingrow input{padding:10px}
+.ingrow .opt{font-size:12px;padding:8px;border-radius:8px;border:1px solid var(--border);color:var(--muted)}
+.ingrow .opt.on{background:var(--accent-soft);color:var(--accent);border-color:transparent;font-weight:600}
+.ingrow .x{width:30px;height:30px;font-size:20px;color:var(--muted)}
+.photo-row{display:flex;gap:8px;align-items:center}
+.photo-row img{width:64px;height:64px;border-radius:10px;object-fit:cover}
+.filebtn{margin:0;color:var(--text);font-size:15px}
+.checks{display:flex;flex-direction:column;gap:2px;margin-top:8px}
+.check{display:flex;align-items:center;gap:10px;margin:0;padding:10px 0;border-bottom:1px solid var(--border);color:var(--text);font-size:16px;font-weight:500}
+.check input{width:22px;height:22px;-webkit-appearance:checkbox;appearance:auto;accent-color:var(--accent);flex:none}
+.choice{display:block;width:100%;text-align:left;background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:10px}
+.choice b{display:block;font-size:16px;margin-bottom:4px}
+.choice span{font-size:13px;color:var(--muted)}
+#toast{position:fixed;left:50%;bottom:calc(86px + var(--safe-b));transform:translate(-50%,20px);opacity:0;z-index:30;
+  background:var(--text);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;transition:.2s;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<header class="top"><h1 id="title">냉장고</h1><button id="addBtn" aria-label="추가">+</button></header>
+<main id="view"></main>
+<nav class="tabs">
+  <button data-tab="fridge" class="on"><svg viewBox="0 0 24 24"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M5 10h14M8.5 6v1.5M8.5 13v3"/></svg>냉장고</button>
+  <button data-tab="recipes"><svg viewBox="0 0 24 24"><path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H18v15H5.5A1.5 1.5 0 0 0 4 19.5z"/><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H18v-3"/><path d="M8 7.5h6M8 11h4"/></svg>레시피</button>
+  <button data-tab="cook"><svg viewBox="0 0 24 24"><path d="M3 11h18a9 9 0 0 1-18 0z"/><path d="M8 7c0-1.5 1-1.5 1-3M12 7c0-1.5 1-1.5 1-3M16 7c0-1.5 1-1.5 1-3"/></svg>뭐 해먹지</button>
+  <button data-tab="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>설정</button>
+</nav>
+
+<script>
+'use strict';
+const VERSION = '1.0';
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const addDays = n => { const d = new Date(); d.setDate(d.getDate() + n); return ymd(d); };
+
+const DEFAULT_STAPLES = ['소금','설탕','간장','국간장','고춧가루','고추장','된장','마늘','참기름','들기름','식용유','후추','깨','물엿','올리고당','식초','맛술','물'];
+const DEFAULT_ALIASES = ['계란, 달걀','대파, 파','소고기, 쇠고기','애호박, 호박','부침가루, 튀김가루'];
+const TAGS = ['국/찌개','반찬','볶음','조림','구이','전','면','밥/덮밥','한그릇','술안주','간식'];
+
+/* ---------- IndexedDB ---------- */
+const DB = {
+  db: null,
+  open() {
+    return new Promise((res, rej) => {
+      const r = indexedDB.open('ohneul', 1);
+      r.onupgradeneeded = () => {
+        const d = r.result;
+        ['items', 'recipes'].forEach(n => { if (!d.objectStoreNames.contains(n)) d.createObjectStore(n, { keyPath: 'id' }); });
+        if (!d.objectStoreNames.contains('kv')) d.createObjectStore('kv');
+      };
+      r.onsuccess = () => { this.db = r.result; res(); };
+      r.onerror = () => rej(r.error);
+    });
+  },
+  tx(store, mode, fn) {
+    return new Promise((res, rej) => {
+      const t = this.db.transaction(store, mode);
+      const req = fn(t.objectStore(store));
+      t.oncomplete = () => res(req instanceof IDBRequest ? req.result : undefined);
+      t.onerror = () => rej(t.error);
+    });
+  },
+  all: s => DB.tx(s, 'readonly', st => st.getAll()),
+  get: (s, k) => DB.tx(s, 'readonly', st => st.get(k)),
+  put: (s, v, k) => DB.tx(s, 'readwrite', st => k === undefined ? st.put(v) : st.put(v, k)),
+  del: (s, k) => DB.tx(s, 'readwrite', st => st.delete(k)),
+  clear: s => DB.tx(s, 'readwrite', st => st.clear()),
+};
+
+const S = { items: [], recipes: [], staples: [], aliases: [], tab: 'fridge', fridgeLoc: '전체', fridgeQ: '', recipeQ: '', recipeTag: '' };
+
+async function load() {
+  S.items = await DB.all('items');
+  S.recipes = await DB.all('recipes');
+  S.staples = (await DB.get('kv', 'staples')) ?? DEFAULT_STAPLES;
+  S.aliases = (await DB.get('kv', 'aliases')) ?? DEFAULT_ALIASES;
+  buildAlias();
+}
+async function reload() { await load(); render(); }
+
+/* ---------- 재료 매칭 ---------- */
+const norm = s => String(s || '').replace(/\([^)]*\)|\[[^\]]*\]/g, '').replace(/[\s·]/g, '').toLowerCase();
+let ALIAS = new Map();
+function buildAlias() {
+  ALIAS = new Map();
+  S.aliases.forEach(line => {
+    const parts = line.split(/[,，]/).map(norm).filter(Boolean);
+    parts.forEach(p => ALIAS.set(p, parts[0]));
+  });
+}
+const canon = s => { const n = norm(s); return ALIAS.get(n) || n; };
+function isStaple(name) {
+  const c = canon(name);
+  return S.staples.some(st => { const s = canon(st); return s && (c === s || (s.length >= 2 && c.endsWith(s))); });
+}
+function daysLeft(it) {
+  if (!it || !it.expiry) return null;
+  const t = new Date(); t.setHours(0, 0, 0, 0);
+  return Math.round((new Date(it.expiry + 'T00:00:00') - t) / 86400000);
+}
+const dl = it => daysLeft(it) ?? 9999;
+const isSoon = it => { const d = daysLeft(it); return d !== null && d <= 3; };
+function findInFridge(name) {
+  const c = canon(name); if (!c) return null;
+  let best = null;
+  for (const it of S.items) {
+    const f = canon(it.name); if (!f) continue;
+    if (f === c) return it;
+    if ((c.length >= 2 && f.includes(c)) || (f.length >= 2 && c.includes(f))) {
+      if (!best || dl(it) < dl(best)) best = it;
+    }
+  }
+  return best;
+}
+function analyze(r) {
+  const a = { have: [], missing: [], staple: [], optional: [], soon: 0 };
+  for (const ing of r.ingredients || []) {
+    if (!ing.name) continue;
+    const it = findInFridge(ing.name);
+    if (it) { a.have.push({ ing, it }); if (isSoon(it)) a.soon++; }
+    else if (isStaple(ing.name)) a.staple.push({ ing });
+    else if (ing.optional) a.optional.push({ ing });
+    else a.missing.push({ ing });
+  }
+  return a;
+}
+function badge(it) {
+  const d = daysLeft(it);
+  if (d === null) return '';
+  if (d < 0) return `<span class="badge danger">${-d}일 지남</span>`;
+  if (d === 0) return `<span class="badge danger">오늘까지</span>`;
+  if (d <= 3) return `<span class="badge warn">D-${d}</span>`;
+  return `<span class="badge">D-${d}</span>`;
+}
+
+/* ---------- 텍스트 → 레시피 파서 ---------- */
+const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}]/gu;
+const AMT_RE = /^(.*?)\s*((?:\d|[½¼¾⅓⅔⅛]|약간|조금|적당|살짝|넉넉|한\s?(?:줌|큰술|작은술|컵|개|꼬집|스푼|숟가락|봉|팩|모|단|통|알|장|쪽)|반\s?(?:개|컵|통|모|봉|팩|큰술|스푼|줌)|두\s?(?:개|큰술|스푼|줌|컵|쪽|장)|세\s?(?:개|큰술|스푼)).*)$/;
+function splitAmount(part) {
+  let s = part.replace(/^[\-\*•·▪▫▶►○●◦✓✔☑√]+\s*/, '').trim();
+  const optional = /(선택|생략\s*가능|옵션|optional)/i.test(s);
+  s = s.replace(/\(?\s*(선택|생략\s*가능|옵션)\s*\)?/g, '').replace(/[:：]\s*/, ' ').trim();
+  const m = s.match(AMT_RE);
+  if (m && m[1].trim()) return { name: m[1].trim(), amount: m[2].trim(), optional };
+  return { name: s, amount: '', optional };
+}
+function header(line, words) {
+  const re = new RegExp('^[\\[【<〈《(]?\\s*(?:' + words + ')\\s*(?:\\([^)]*\\))?\\s*[\\]】>〉》)]?\\s*(?:\\([^)]*\\))?\\s*(?:[:：]\\s*(.*))?$', 'i');
+  const m = line.match(re);
+  return m ? { rest: (m[1] || '').trim() } : null;
+}
+const H_ING = '(?:주|부|필수|준비)?\\s*재료|준비물|ingredients?';
+const H_SAUCE = '.{0,6}?(?:양념장|양념|소스|드레싱|육수)';
+const H_STEP = '만드는\\s*(?:법|방법)|조리\\s*(?:법|방법|순서)|레시피|요리\\s*순서|순서|과정|how\\s*to|recipe|directions';
+const STEP_NUM = /^(?:\d{1,2}\s*[\.\)]|[①-⑳]|step\s*\d+\s*[:.]?)\s*/i;
+
+function parseRecipeText(text) {
+  const out = { title: '', tags: [], ingredients: [], steps: [], memo: '', source: '' };
+  const memo = [];
+  let mode = null;
+  const pushIngs = s => s.split(/\s*[,，、|]\s*|\s+\/\s+|\s[·•]\s/).map(x => x.trim()).filter(Boolean).forEach(p => {
+    const g = splitAmount(p); if (g.name) out.ingredients.push(g);
+  });
+  for (let raw of text.split(/\r?\n/)) {
+    const url = raw.match(/https?:\/\/\S+/);
+    if (url && !out.source) out.source = url[0];
+    let line = raw.replace(/https?:\/\/\S+/g, '').replace(/#\S+/g, '').replace(EMOJI, '').trim();
+    if (!line) continue;
+    let h;
+    if ((h = header(line, H_ING)) || (h = header(line, H_SAUCE))) { mode = 'ing'; if (h.rest) pushIngs(h.rest); continue; }
+    if ((h = header(line, H_STEP))) { mode = 'step'; if (h.rest) out.steps.push(h.rest); continue; }
+    if (STEP_NUM.test(line) && mode !== 'step' && (out.ingredients.length || out.title)) mode = 'step';
+    if (mode === 'ing') { pushIngs(line); continue; }
+    if (mode === 'step') {
+      if (/@|팔로우|좋아요|댓글|구독|저장해/.test(line)) continue;
+      const s = line.replace(STEP_NUM, '').replace(/^[\-•·]\s*/, '').trim();
+      if (s) out.steps.push(s);
+      continue;
+    }
+    if (!out.title && line.length <= 40) { out.title = line.replace(/[\[\]【】<>《》]/g, '').trim(); continue; }
+    memo.push(line);
+  }
+  out.memo = memo.join('\n');
+  const t = out.title;
+  const guess = [[/찌개|국$|탕$|전골/, '국/찌개'], [/볶음/, '볶음'], [/조림|장조림/, '조림'], [/구이/, '구이'], [/전$|부침개|지짐/, '전'],
+    [/국수|면$|라면|우동|파스타|냉면/, '면'], [/덮밥|볶음밥|비빔밥|김밥|밥$/, '밥/덮밥'], [/무침|나물|장아찌|김치/, '반찬']];
+  guess.forEach(([re, tag]) => { if (re.test(t) && !out.tags.includes(tag)) out.tags.push(tag); });
+  return out;
+}
+
+/* ---------- 공통 UI ---------- */
+function openSheet(html, mount, tall) {
+  let w = $('#sheetWrap');
+  if (!w) {
+    w = document.createElement('div'); w.id = 'sheetWrap'; w.className = 'sheet-wrap';
+    w.innerHTML = '<div class="sheet" role="dialog" aria-modal="true"><button class="sheet-close" aria-label="닫기">×</button><div class="sheet-body"></div></div>';
+    document.body.appendChild(w);
+    w.addEventListener('click', e => { if (e.target === w) closeSheet(); });
+    w.querySelector('.sheet-close').onclick = closeSheet;
+    requestAnimationFrame(() => requestAnimationFrame(() => w.classList.add('show')));
+    document.body.classList.add('locked');
+  }
+  const sh = w.querySelector('.sheet');
+  sh.classList.toggle('tall', !!tall);
+  const body = w.querySelector('.sheet-body');
+  body.innerHTML = html; sh.scrollTop = 0;
+  if (mount) mount(body, s => body.querySelector(s));
+}
+function closeSheet() {
+  const w = $('#sheetWrap'); if (!w) return;
+  w.id = ''; w.classList.remove('show'); document.body.classList.remove('locked');
+  setTimeout(() => w.remove(), 250);
+}
+let toastT;
+function toast(msg) {
+  let t = $('#toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; document.body.appendChild(t); }
+  t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1800);
+}
+const empty = (t, s) => `<div class="empty"><div class="empty-ic">🥢</div><b>${t}</b><p>${s}</p></div>`;
+function allNames() {
+  return [...new Set(S.items.map(i => i.name).concat(S.recipes.flatMap(r => (r.ingredients || []).map(x => x.name))))].filter(Boolean);
+}
+function resizeImage(file, max = 900) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file); const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+      res(c.toDataURL('image/jpeg', 0.78));
+    };
+    img.onerror = rej; img.src = url;
+  });
+}
+
+/* ---------- 냉장고 ---------- */
+function viewFridge() {
+  const soon = S.items.filter(isSoon).length;
+  return `${soon ? `<div class="alert">유통기한 임박·지난 재료 <b>${soon}개</b> → "뭐 해먹지" 탭에서 활용 레시피 보기</div>` : ''}
+  <input class="search" id="fq" type="search" placeholder="재료 검색" value="${esc(S.fridgeQ)}">
+  <div class="chips">${['전체', '냉장', '냉동', '실온'].map(l => `<button class="chip ${S.fridgeLoc === l ? 'on' : ''}" data-act="loc" data-v="${l}">${l} <span>${l === '전체' ? S.items.length : S.items.filter(i => i.loc === l).length}</span></button>`).join('')}</div>
+  <div id="list">${listFridge()}</div>`;
+}
+function listFridge() {
+  if (!S.items.length) return empty('냉장고가 비어 있어요', '오른쪽 위 + 버튼으로 재료를 추가해 보세요.<br>장 본 뒤엔 "여러 개 한번에"가 편해요.');
+  const q = norm(S.fridgeQ);
+  const arr = S.items.filter(i => (S.fridgeLoc === '전체' || i.loc === S.fridgeLoc) && (!q || norm(i.name).includes(q)))
+    .sort((a, b) => dl(a) - dl(b) || a.name.localeCompare(b.name, 'ko'));
+  if (!arr.length) return empty('해당하는 재료가 없어요', '');
+  return `<div class="list">${arr.map(i => `<button class="row" data-act="editItem" data-id="${i.id}">
+    <div class="row-main"><div class="row-title">${esc(i.name)}</div><div class="row-sub">${esc([i.qty, i.loc].filter(Boolean).join(' · '))}</div></div>${badge(i)}</button>`).join('')}</div>`;
+}
+function itemSheet(item) {
+  const it = item || { name: '', qty: '', loc: S.fridgeLoc === '전체' ? '냉장' : S.fridgeLoc, expiry: '' };
+  openSheet(`<div class="sheet-head"><h2>${item ? '재료 수정' : '재료 추가'}</h2>${item ? '' : '<button class="link" id="iBulk">여러 개 한번에</button>'}</div>
+    <label>이름<input id="iName" list="nameList" value="${esc(it.name)}" placeholder="예: 애호박" autocomplete="off"></label>
+    <datalist id="nameList">${allNames().map(n => `<option value="${esc(n)}">`).join('')}</datalist>
+    <label>수량<input id="iQty" value="${esc(it.qty)}" placeholder="예: 2개, 반 통 (안 써도 돼요)"></label>
+    <label>보관</label><div class="seg" id="iLoc">${['냉장', '냉동', '실온'].map(l => `<button type="button" class="${it.loc === l ? 'on' : ''}" data-v="${l}">${l}</button>`).join('')}</div>
+    <label>유통기한<input id="iExp" type="date" value="${esc(it.expiry)}"></label>
+    <div class="quick">${[3, 7, 14, 30].map(d => `<button type="button" class="chip" data-days="${d}">+${d}일</button>`).join('')}<button type="button" class="chip" data-days="0">없음</button></div>
+    <div class="actions">${item ? '<button class="btn danger" id="iDel">삭제</button>' : ''}<button class="btn primary" id="iSave">저장</button></div>`,
+  (sh, q) => {
+    sh.querySelectorAll('#iLoc button').forEach(b => b.onclick = () => { sh.querySelectorAll('#iLoc button').forEach(x => x.classList.remove('on')); b.classList.add('on'); });
+    sh.querySelectorAll('[data-days]').forEach(b => b.onclick = () => { const d = +b.dataset.days; q('#iExp').value = d ? addDays(d) : ''; });
+    q('#iSave').onclick = async () => {
+      const name = q('#iName').value.trim(); if (!name) return toast('이름을 입력해 주세요');
+      await DB.put('items', { ...it, id: it.id || uid(), name, qty: q('#iQty').value.trim(), loc: sh.querySelector('#iLoc .on')?.dataset.v || '냉장', expiry: q('#iExp').value, addedAt: it.addedAt || Date.now() });
+      await reload(); closeSheet(); toast('저장했어요');
+    };
+    if (item) q('#iDel').onclick = async () => { await DB.del('items', item.id); await reload(); closeSheet(); toast('삭제했어요'); };
+    else q('#iBulk').onclick = bulkSheet;
+  });
+}
+function bulkSheet() {
+  openSheet(`<h2>여러 개 한번에</h2><p class="muted small">쉼표나 줄바꿈으로 구분해서 적어 주세요. 숫자가 붙어 있으면 수량으로 저장돼요.</p>
+    <textarea id="bText" rows="6" placeholder="애호박, 두부 1모, 계란 10개&#10;양파 3개&#10;돼지고기 앞다리살 300g"></textarea>
+    <label>보관</label><div class="seg" id="bLoc">${['냉장', '냉동', '실온'].map((l, i) => `<button type="button" class="${i === 0 ? 'on' : ''}" data-v="${l}">${l}</button>`).join('')}</div>
+    <label>유통기한 (전부 같게, 선택)<input id="bExp" type="date"></label>
+    <div class="quick">${[3, 7, 14].map(d => `<button type="button" class="chip" data-days="${d}">+${d}일</button>`).join('')}</div>
+    <div class="actions"><button class="btn primary" id="bSave">추가</button></div>`,
+  (sh, q) => {
+    sh.querySelectorAll('#bLoc button').forEach(b => b.onclick = () => { sh.querySelectorAll('#bLoc button').forEach(x => x.classList.remove('on')); b.classList.add('on'); });
+    sh.querySelectorAll('[data-days]').forEach(b => b.onclick = () => q('#bExp').value = addDays(+b.dataset.days));
+    q('#bSave').onclick = async () => {
+      const parts = q('#bText').value.split(/[,，\n]/).map(s => s.trim()).filter(Boolean);
+      if (!parts.length) return toast('재료를 적어 주세요');
+      const loc = sh.querySelector('#bLoc .on').dataset.v, expiry = q('#bExp').value;
+      for (const p of parts) { const g = splitAmount(p); await DB.put('items', { id: uid(), name: g.name, qty: g.amount, loc, expiry, addedAt: Date.now() }); }
+      await reload(); closeSheet(); toast(`${parts.length}개 추가했어요`);
+    };
+  });
+}
+
+/* ---------- 레시피 ---------- */
+function viewRecipes() {
+  const tags = [...new Set(S.recipes.flatMap(r => r.tags || []))];
+  return `<input class="search" id="rq" type="search" placeholder="요리 이름·재료로 검색" value="${esc(S.recipeQ)}">
+  ${tags.length ? `<div class="chips"><button class="chip ${!S.recipeTag ? 'on' : ''}" data-act="tag" data-v="">전체</button>${tags.map(t => `<button class="chip ${S.recipeTag === t ? 'on' : ''}" data-act="tag" data-v="${esc(t)}">${esc(t)}</button>`).join('')}</div>` : ''}
+  <div id="list">${listRecipes()}</div>`;
+}
+function listRecipes() {
+  if (!S.recipes.length) return empty('아직 레시피가 없어요', '+ 버튼으로 직접 쓰거나,<br>릴스 캡션을 붙여넣어 저장해 보세요.');
+  const q = norm(S.recipeQ);
+  const arr = S.recipes.filter(r => (!S.recipeTag || (r.tags || []).includes(S.recipeTag)) &&
+    (!q || norm(r.title).includes(q) || (r.ingredients || []).some(i => norm(i.name).includes(q))))
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  if (!arr.length) return empty('검색 결과가 없어요', '');
+  return `<div class="list">${arr.map(r => recipeCard(r)).join('')}</div>`;
+}
+function recipeCard(r, extra) {
+  const a = analyze(r), n = (r.ingredients || []).length;
+  const status = !n ? '' : a.missing.length === 0 ? '<span class="badge ok">바로 가능</span>' : `<span class="badge">${a.missing.length}개 부족</span>`;
+  const sub = extra || esc((r.tags || []).join(' · ') || `재료 ${n}개`);
+  return `<button class="row" data-act="openRecipe" data-id="${r.id}">${r.photo ? `<img class="thumb" src="${r.photo}" alt="">` : `<div class="thumb ph">${esc((r.title || '?')[0])}</div>`}
+    <div class="row-main"><div class="row-title">${esc(r.title)}</div><div class="row-sub">${sub}</div></div>${status}</button>`;
+}
+function addChooser() {
+  openSheet(`<h2>레시피 추가</h2>
+    <button class="choice" id="cManual"><b>직접 쓰기</b><span>내 레시피를 재료·순서대로 입력</span></button>
+    <button class="choice" id="cPaste"><b>텍스트 붙여넣기</b><span>릴스 캡션, 블로그 글을 붙여넣으면 재료와 순서를 나눠 드려요</span></button>`,
+  (sh, q) => { q('#cManual').onclick = () => recipeForm(null); q('#cPaste').onclick = pasteSheet; });
+}
+function pasteSheet() {
+  openSheet(`<h2>텍스트로 추가</h2><p class="muted small">릴스 캡션, 블로그 레시피를 그대로 붙여넣으세요. 다음 화면에서 고칠 수 있어요.</p>
+    <textarea id="pText" rows="10" placeholder="애호박전&#10;재료: 애호박 1개, 계란 2개, 부침가루 3큰술&#10;만드는 법&#10;1. 애호박을 0.5cm로 썬다&#10;2. ..."></textarea>
+    <label>원본 링크 (선택)<input id="pSrc" type="url" placeholder="https://www.instagram.com/reel/..." autocapitalize="off"></label>
+    <div class="actions"><button class="btn" id="pClip">클립보드 붙여넣기</button><button class="btn primary" id="pGo">정리하기</button></div>`,
+  (sh, q) => {
+    q('#pClip').onclick = async () => {
+      try {
+        const t = (await navigator.clipboard.readText()).trim();
+        if (/^https?:\/\/\S+$/.test(t)) q('#pSrc').value = t; else q('#pText').value = t;
+      } catch (e) { toast('입력칸을 길게 눌러 붙여넣어 주세요'); }
+    };
+    q('#pGo').onclick = () => {
+      const t = q('#pText').value.trim(); if (!t) return toast('텍스트를 붙여넣어 주세요');
+      const r = parseRecipeText(t); const src = q('#pSrc').value.trim(); if (src) r.source = src;
+      recipeForm(r, true);
+    };
+  });
+}
+function recipeForm(r, fromParse) {
+  const isEdit = !!(r && r.id);
+  const d = r || { title: '', tags: [], ingredients: [], steps: [], memo: '', source: '', photo: '' };
+  let photo = d.photo || '';
+  const ings = ((d.ingredients && d.ingredients.length) ? d.ingredients : [{}, {}, {}]).map(x => ({ name: x.name || '', amount: x.amount || '', optional: !!x.optional }));
+  const allTags = [...new Set(TAGS.concat(S.recipes.flatMap(x => x.tags || []), d.tags || []))];
+  const sel = new Set(d.tags || []);
+  openSheet(`<h2>${isEdit ? '레시피 수정' : '새 레시피'}</h2>
+    ${fromParse ? '<p class="note">자동으로 나눈 결과예요. 틀린 부분만 고쳐서 저장하세요.</p>' : ''}
+    <label>요리 이름<input id="fTitle" value="${esc(d.title)}" placeholder="예: 애호박 된장찌개"></label>
+    <label>분류</label><div class="chips wrap" id="fTags">${allTags.map(t => `<button type="button" class="chip ${sel.has(t) ? 'on' : ''}" data-v="${esc(t)}">${esc(t)}</button>`).join('')}<button type="button" class="chip" id="fNewTag">+ 직접</button></div>
+    <label>재료 <span class="small">"선택" = 없어도 되는 재료</span></label>
+    <datalist id="nameList2">${allNames().map(n => `<option value="${esc(n)}">`).join('')}</datalist>
+    <div id="fIngs"></div><button type="button" class="btn ghost full" id="fAddIng">+ 재료 추가</button>
+    <label>만드는 법 <span class="small">한 줄에 한 단계</span><textarea id="fSteps" rows="7">${esc((d.steps || []).join('\n'))}</textarea></label>
+    <label>메모<textarea id="fMemo" rows="2" placeholder="예: 다음엔 간장 반만">${esc(d.memo || '')}</textarea></label>
+    <label>원본 링크<input id="fSrc" type="url" value="${esc(d.source || '')}" placeholder="https://" autocapitalize="off"></label>
+    <label>사진</label><div class="photo-row"><span id="fPrev"></span><label class="btn ghost filebtn">사진 선택<input type="file" id="fPhoto" accept="image/*" hidden></label><button type="button" class="btn ghost" id="fPhotoDel">지우기</button></div>
+    <div class="actions"><button class="btn" id="fCancel">취소</button><button class="btn primary" id="fSave">저장</button></div>`,
+  (sh, q) => {
+    const box = q('#fIngs');
+    const draw = () => {
+      box.innerHTML = ings.map((g, i) => `<div class="ingrow" data-i="${i}"><input class="gn" value="${esc(g.name)}" placeholder="재료" list="nameList2" autocomplete="off"><input class="ga" value="${esc(g.amount)}" placeholder="양"><button type="button" class="opt ${g.optional ? 'on' : ''}">선택</button><button type="button" class="x" aria-label="삭제">×</button></div>`).join('');
+    };
+    const drawPrev = () => { q('#fPrev').innerHTML = photo ? `<img src="${photo}" alt="">` : ''; q('#fPhotoDel').style.display = photo ? '' : 'none'; };
+    draw(); drawPrev();
+    box.addEventListener('input', e => {
+      const row = e.target.closest('.ingrow'); if (!row) return; const g = ings[+row.dataset.i];
+      if (e.target.classList.contains('gn')) g.name = e.target.value; else if (e.target.classList.contains('ga')) g.amount = e.target.value;
+    });
+    box.addEventListener('click', e => {
+      const row = e.target.closest('.ingrow'); if (!row) return; const i = +row.dataset.i;
+      if (e.target.classList.contains('opt')) { ings[i].optional = !ings[i].optional; e.target.classList.toggle('on'); }
+      if (e.target.classList.contains('x')) { ings.splice(i, 1); draw(); }
+    });
+    q('#fAddIng').onclick = () => { ings.push({ name: '', amount: '', optional: false }); draw(); box.lastElementChild.querySelector('.gn').focus(); };
+    q('#fTags').addEventListener('click', e => {
+      const b = e.target.closest('.chip'); if (!b) return;
+      if (b.id === 'fNewTag') {
+        const t = (prompt('새 분류 이름') || '').trim(); if (!t) return;
+        const nb = document.createElement('button'); nb.type = 'button'; nb.className = 'chip on'; nb.dataset.v = t; nb.textContent = t;
+        b.before(nb); return;
+      }
+      b.classList.toggle('on');
+    });
+    q('#fPhoto').onchange = async e => {
+      const f = e.target.files[0]; if (!f) return;
+      try { photo = await resizeImage(f); drawPrev(); } catch (err) { toast('사진을 읽지 못했어요'); }
+    };
+    q('#fPhotoDel').onclick = () => { photo = ''; drawPrev(); };
+    q('#fCancel').onclick = () => isEdit ? recipeSheet(r) : closeSheet();
+    q('#fSave').onclick = async () => {
+      const title = q('#fTitle').value.trim(); if (!title) return toast('요리 이름을 입력해 주세요');
+      const obj = {
+        ...d, id: d.id || uid(), title,
+        tags: [...sh.querySelectorAll('#fTags .chip.on')].map(b => b.dataset.v),
+        ingredients: ings.map(g => ({ name: g.name.trim(), amount: g.amount.trim(), optional: g.optional })).filter(g => g.name),
+        steps: q('#fSteps').value.split('\n').map(s => s.trim()).filter(Boolean),
+        memo: q('#fMemo').value.trim(), source: q('#fSrc').value.trim(), photo,
+        createdAt: d.createdAt || Date.now(), updatedAt: Date.now(),
+      };
+      await DB.put('recipes', obj); await reload(); toast('저장했어요');
+      recipeSheet(S.recipes.find(x => x.id === obj.id) || obj);
+    };
+  }, true);
+}
+function recipeSheet(r) {
+  if (!r) return;
+  const a = analyze(r); const have = new Map(a.have.map(h => [h.ing, h.it]));
+  const ingHtml = (r.ingredients || []).map(ing => {
+    let cls, note; const it = have.get(ing);
+    if (it) { cls = 'have'; note = norm(it.name) !== norm(ing.name) ? `있음 (${it.name})` : '있음'; }
+    else if (isStaple(ing.name)) { cls = 'staple'; note = '기본양념'; }
+    else if (ing.optional) { cls = 'opt'; note = '선택'; }
+    else { cls = 'miss'; note = '없음'; }
+    return `<li class="ing ${cls}"><span class="dot"></span><span class="iname">${esc(ing.name)}</span><span class="iamt">${esc(ing.amount)}</span><span class="inote">${esc(note)}</span></li>`;
+  }).join('');
+  const src = /^https?:\/\//.test(r.source || '') ? r.source : '';
+  openSheet(`${r.photo ? `<img class="hero" src="${r.photo}" alt="">` : ''}
+    <h2>${esc(r.title)}</h2>
+    <div class="meta">${(r.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('')}${r.cookCount ? `<span class="muted small">${r.cookCount}번 만듦 · 마지막 ${esc(r.lastCooked)}</span>` : ''}</div>
+    ${src ? `<a class="src" href="${esc(src)}" target="_blank" rel="noopener">원본 보기 ↗</a>` : ''}
+    <h3>재료 ${a.missing.length ? `<span class="miss small">${a.missing.length}개 부족</span>` : ''}</h3>
+    <ul class="ings">${ingHtml || '<li class="muted">재료 없음</li>'}</ul>
+    ${(r.steps || []).length ? `<h3>만드는 법</h3><ol class="steps">${r.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>` : ''}
+    ${r.memo ? `<h3>메모</h3><p class="memo">${esc(r.memo)}</p>` : ''}
+    <div class="actions"><button class="btn" id="rEdit">수정</button><button class="btn primary" id="rCook">요리했어요</button></div>
+    <button class="btn ghost danger-text full" id="rDel">레시피 삭제</button>`,
+  (sh, q) => {
+    q('#rEdit').onclick = () => recipeForm(r);
+    q('#rCook').onclick = () => cookedSheet(r);
+    q('#rDel').onclick = async () => { if (!confirm('이 레시피를 삭제할까요?')) return; await DB.del('recipes', r.id); await reload(); closeSheet(); toast('삭제했어요'); };
+  }, true);
+}
+function cookedSheet(r) {
+  const a = analyze(r); const used = [...new Map(a.have.map(h => [h.it.id, h.it])).values()];
+  openSheet(`<h2>잘 먹었어요 🍚</h2><p class="muted">다 쓴 재료를 냉장고에서 뺄게요. 남은 재료는 체크를 풀어 주세요.</p>
+    ${used.length ? `<div class="checks">${used.map(it => `<label class="check"><input type="checkbox" value="${it.id}" checked>${esc(it.name)} <span class="muted small">${esc(it.qty || '')}</span></label>`).join('')}</div>` : '<p class="muted">냉장고에서 쓴 재료가 없어요.</p>'}
+    <div class="actions"><button class="btn" id="cBack">취소</button><button class="btn primary" id="cDone">완료</button></div>`,
+  (sh, q) => {
+    q('#cBack').onclick = () => recipeSheet(r);
+    q('#cDone').onclick = async () => {
+      const ids = [...sh.querySelectorAll('.checks input:checked')].map(x => x.value);
+      for (const id of ids) await DB.del('items', id);
+      await DB.put('recipes', { ...r, cookCount: (r.cookCount || 0) + 1, lastCooked: ymd(new Date()) });
+      await reload(); closeSheet(); toast(ids.length ? `재료 ${ids.length}개를 냉장고에서 뺐어요` : '기록했어요');
+    };
+  });
+}
+
+/* ---------- 뭐 해먹지 ---------- */
+function viewCook() {
+  if (!S.recipes.length) return empty('추천할 레시피가 없어요', '레시피를 저장하면, 냉장고 재료로<br>지금 만들 수 있는 요리를 골라 드려요.');
+  const rows = S.recipes.filter(r => (r.ingredients || []).length).map(r => ({ r, a: analyze(r) }));
+  const byUse = (x, y) => y.a.soon - x.a.soon || y.a.have.length - x.a.have.length;
+  const ready = rows.filter(x => !x.a.missing.length).sort(byUse);
+  const almost = rows.filter(x => x.a.missing.length && x.a.missing.length <= 2 && x.a.have.length)
+    .sort((x, y) => x.a.missing.length - y.a.missing.length || byUse(x, y));
+  const soonItems = S.items.filter(isSoon).sort((a, b) => dl(a) - dl(b));
+  const sub = x => {
+    const s = x.a.have.filter(h => isSoon(h.it)).map(h => h.it.name);
+    return s.length ? `<span class="hl">임박 재료 사용: ${esc([...new Set(s)].join(', '))}</span>` : esc(`가진 재료 ${x.a.have.length}개 사용`);
+  };
+  return `${soonItems.length ? `<div class="alert">빨리 써야 할 재료: <b>${esc(soonItems.map(i => i.name).join(', '))}</b></div>` : ''}
+    <h3 class="sec">바로 만들 수 있어요 <span>${ready.length}</span></h3>
+    ${ready.length ? `<div class="list">${ready.map(x => recipeCard(x.r, sub(x))).join('')}</div>` : '<p class="muted">지금 재료만으로 되는 레시피는 없어요.</p>'}
+    <h3 class="sec">조금만 사면 돼요 <span>${almost.length}</span></h3>
+    ${almost.length ? `<div class="list">${almost.map(x => recipeCard(x.r, `<span class="miss">필요: ${esc(x.a.missing.map(m => m.ing.name).join(', '))}</span>`)).join('')}</div>` : '<p class="muted">1~2개만 사면 되는 레시피가 없어요.</p>'}`;
+}
+
+/* ---------- 설정 ---------- */
+function viewSettings() {
+  return `<div class="card"><h3>기본 양념</h3><p class="muted small">항상 집에 있다고 보는 재료예요. 추천할 때 부족한 재료로 세지 않아요. 쉼표로 구분.</p>
+    <textarea id="sStaples" rows="4">${esc(S.staples.join(', '))}</textarea>
+    <h3>같은 재료로 보기</h3><p class="muted small">한 줄에 한 묶음, 쉼표로 구분 (예: 계란, 달걀)</p>
+    <textarea id="sAliases" rows="4">${esc(S.aliases.join('\n'))}</textarea>
+    <button class="btn primary full" data-act="saveSettings">저장</button></div>
+  <div class="card"><h3>백업</h3><p class="muted small">데이터는 이 아이폰 안에만 저장돼요. 가끔 내보내기 해서 파일 앱이나 iCloud에 넣어 두세요.</p>
+    <div class="actions" style="margin-top:8px"><button class="btn" data-act="export">내보내기</button><label class="btn filebtn">가져오기<input type="file" id="sImport" accept="application/json,.json" hidden></label></div>
+    <p class="muted small" style="margin-top:12px">재료 ${S.items.length}개 · 레시피 ${S.recipes.length}개</p></div>
+  <p class="muted small center">오늘뭐먹지 v${VERSION}</p>`;
+}
+async function saveSettings() {
+  S.staples = $('#sStaples').value.split(/[,，\n]/).map(s => s.trim()).filter(Boolean);
+  S.aliases = $('#sAliases').value.split('\n').map(s => s.trim()).filter(Boolean);
+  await DB.put('kv', S.staples, 'staples'); await DB.put('kv', S.aliases, 'aliases');
+  buildAlias(); toast('저장했어요');
+}
+async function exportData() {
+  const data = { app: 'ohneul', version: 1, exportedAt: new Date().toISOString(), items: S.items, recipes: S.recipes, staples: S.staples, aliases: S.aliases };
+  const name = `ohneul-backup-${ymd(new Date())}.json`;
+  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+  try {
+    const file = new File([blob], name, { type: 'application/json' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; }
+  } catch (e) { if (e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+async function importData(file) {
+  try {
+    const data = JSON.parse(await file.text());
+    if (!Array.isArray(data.items) || !Array.isArray(data.recipes)) throw new Error('format');
+    if (!confirm(`재료 ${data.items.length}개, 레시피 ${data.recipes.length}개를 가져올까요?\n지금 데이터는 덮어써져요.`)) return;
+    await DB.clear('items'); await DB.clear('recipes');
+    for (const i of data.items) await DB.put('items', i);
+    for (const r of data.recipes) await DB.put('recipes', r);
+    if (Array.isArray(data.staples)) await DB.put('kv', data.staples, 'staples');
+    if (Array.isArray(data.aliases)) await DB.put('kv', data.aliases, 'aliases');
+    await reload(); toast('가져왔어요');
+  } catch (e) { toast('백업 파일을 읽지 못했어요'); }
+}
+
+/* ---------- 렌더링 & 이벤트 ---------- */
+const TITLES = { fridge: '냉장고', recipes: '레시피', cook: '뭐 해먹지', settings: '설정' };
+function render() {
+  $('#title').textContent = TITLES[S.tab];
+  $('#addBtn').style.visibility = (S.tab === 'fridge' || S.tab === 'recipes') ? 'visible' : 'hidden';
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === S.tab));
+  $('#view').innerHTML = { fridge: viewFridge, recipes: viewRecipes, cook: viewCook, settings: viewSettings }[S.tab]();
+  const fq = $('#fq'); if (fq) fq.oninput = () => { S.fridgeQ = fq.value; $('#list').innerHTML = listFridge(); };
+  const rq = $('#rq'); if (rq) rq.oninput = () => { S.recipeQ = rq.value; $('#list').innerHTML = listRecipes(); };
+  const imp = $('#sImport'); if (imp) imp.onchange = e => { if (e.target.files[0]) importData(e.target.files[0]); e.target.value = ''; };
+}
+$('#view').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const id = b.dataset.id;
+  switch (b.dataset.act) {
+    case 'loc': S.fridgeLoc = b.dataset.v; render(); break;
+    case 'tag': S.recipeTag = b.dataset.v; render(); break;
+    case 'editItem': itemSheet(S.items.find(i => i.id === id)); break;
+    case 'openRecipe': recipeSheet(S.recipes.find(r => r.id === id)); break;
+    case 'saveSettings': saveSettings(); break;
+    case 'export': exportData(); break;
+  }
+});
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { S.tab = b.dataset.tab; render(); window.scrollTo(0, 0); });
+$('#addBtn').onclick = () => S.tab === 'fridge' ? itemSheet() : addChooser();
+
+(async () => {
+  try { await DB.open(); await load(); }
+  catch (e) { $('#view').innerHTML = empty('저장소를 열 수 없어요', '개인정보 보호 브라우징을 끄고 다시 열어 주세요.'); return; }
+  render();
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>
